@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Ttodolist temps réel</title> 
+     <body>
+         <h1>Liste de tâches partagées</h1>
+            <ul id="todolist"></ul>
+               <form action="/" method="post" id="todolistForm">
+                   <label for="task">nouvelle tâche ?</label>
+                   <input type="text" name="task" id="task" autofocus>
+                   <button type="submit" class="btn btn-primary btn-lg" id="sendTask">Envoyer</button>
+               </form>   
+        <script src="http://code.jquery.com/jquery-1.12.2.min.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script >        
+            // Connection à socket.io
+            var socket = io.connect('http://localhost:8080');
+            // Première connection, affichage des tâches
+            socket.on('updateArray', function(todolist) {
+                $('#todolist').empty(); // Raffraichissement de la liste des tâches
+                todolist.forEach(function(task, position) {
+                    addTask(task, position);
+                });
+            });
+            // A l'envoi du formulaire, la tâche est transmise puis affichée sur la page
+            $('#todolistForm').submit(function (){
+                var task = $('#task').val();
+                socket.emit('addToArray', task);
+                console.log(task);
+                addTask(task, position); 
+                $('#task').val('').focus();
+                return false;
+            });
+            // A l'arrivée du message, insertion dans la page de la nouvelle tâche
+            socket.on('addToArray', function(data) {
+                addTask(data.task, data.position);
+            });
+            //Fonction insertion tâche
+            function addTask(task, position){
+                $('#todolist').append('<li><a class="delete" href="#" data-index="' + position + '">✘</a> ' + task  + '</li>');
+            }
+            // Supprimer une tâche
+            $('body').on('click', '.delete', function(){
+                socket.emit('deleteFromArray', $(this).data('position'));
+            });
+         </script>
+    </body>
+</html>
